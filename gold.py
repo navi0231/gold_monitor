@@ -1,25 +1,22 @@
 import requests
+import re
 
-def get_price():
-    """获取国际现货黄金 (XAU)"""
-    url = "https://hq.sinajs.cn/list=hf_XAU"
-    headers = {"Referer": "http://finance.sina.com.cn/"}
+def get_price(symbol):
+    url = f"https://hq.sinajs.cn/list={symbol}"
+    headers = {'Referer': 'https://finance.sina.com.cn'}
     try:
-        r = requests.get(url, headers=headers, timeout=10)
-        # 解析新浪国际金接口
-        data = r.text.split('"')[1].split(',')
-        return float(data[0])
+        response = requests.get(url, headers=headers, timeout=10)
+        data = re.search(r'"(.*)"', response.text).group(1)
+        if not data: return None
+        parts = data.split(',')
+        # 国际金价(hf_XAU)当前价在索引 0，国内(gds_AU9999)在索引 0
+        return parts[0]
     except:
         return None
 
-def get_sge_price():
-    # 换成沪金主力接口，更稳定
-    url = "https://hq.sinajs.cn/list=nf_AU0"
-    headers = {"Referer": "http://finance.sina.com.cn/"}
-    try:
-        r = requests.get(url, headers=headers, timeout=10)
-        # 沪金解析逻辑
-        data = r.text.split('"')[1].split(',')
-        return float(data[8]) # 第9个字段是最新价
-    except:
-        return None
+if __name__ == "__main__":
+    # 统一使用 gds 代码，数据更直观
+    domestic = get_price("gds_AU9999")
+    intl = get_price("hf_XAU")
+    print(f"Domestic: {domestic}")
+    print(f"International: {intl}")
